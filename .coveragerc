@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = stackviz_deployer
+omit = stackviz_deployer/openstack/*
+
+[report]
+ignore_errors = True
