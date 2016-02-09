@@ -32,6 +32,9 @@ class Artifact:
         self.entry_type = entry_type
         self.name = name
 
+        if self.name.endswith('/'):
+            self.name = self.name[:-1]
+
     def is_dir(self):
         return self.entry_type == '[DIR]'
 
@@ -40,7 +43,8 @@ class Artifact:
 
     def browse(self):
         if not self.is_dir():
-            raise InvalidArtifactError('Cannot browse a non-directory artifact.')
+            raise InvalidArtifactError(
+                'Cannot browse a non-directory artifact.')
 
         return DirectoryListing(self.abs_url())
 
@@ -79,6 +83,27 @@ class DirectoryListing:
                 self.directories.append(artifact)
             else:
                 self.files.append(artifact)
+
+    def has_directory(self, name):
+        for d in self.directories:
+            if d.name == name:
+                return True
+
+        return False
+
+    def get_directory(self, name):
+        for d in self.directories:
+            if d.name == name:
+                return d
+
+        return None
+
+    def get_file(self, *names):
+        for f in self.files:
+            if f.name in names:
+                return f
+
+        return None
 
     def __repr__(self):
         return "%s(url='%s', directories=[%s], files=[%s])" % (

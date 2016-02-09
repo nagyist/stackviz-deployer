@@ -6,3 +6,10 @@ beautifulsoup4  # MIT
 pbr>=1.6  # Apache-2.0
 requests>=2.8.1,!=2.9.0  # Apache-2.0
 simplejson>=2.2.0  # MIT
+celery>=3.1.20
+redis>=2.10.0  # MIT
+flask
+sqlalchemy
+sqlalchemy-utils  # BSD License
+testtools>=0.9.30
+testrepository>=0.0.18

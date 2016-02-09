@@ -20,8 +20,8 @@ import requests
 import gerrit_list
 
 
-REGEX_GERRIT_CHANGE = re.compile(r'(\d+)')
-REGEX_GERRIT_REVISION = re.compile(r'(\d+)[,/](\d+)')
+REGEX_GERRIT_CHANGE = re.compile(r'^(\d+)$')
+REGEX_GERRIT_REVISION = re.compile(r'^(\d+)[,/](\d+)$')
 REGEX_GERRIT_FRAGMENT = re.compile(r'/c/(\d+)(?:/(\d*))?')
 
 GERRIT_ALLOWED_HOSTS = ['review.openstack.org']
