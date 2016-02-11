@@ -1,0 +1,15 @@
+.vspace {
+    margin-top: 1em;
+}
+
+#results-row {
+    display: none;
+}
+
+#results-error {
+    display: none;
+}
+
+#results-list ul {
+    margin-bottom: 0;
+}
