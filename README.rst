@@ -11,33 +11,57 @@ An on-demand deployment web service for StackViz.
 
 Goals
 -----
-This project aims to provide a easy-to-use UI for generating StackViz sites. Users should be able to paste in a URL, select a list of matches, and then have a StackViz site generated on demand. The actual contents of the generated site should depend on what artifacts can be scraped from the job output (e.g. subunit, dstat, possibly more in the future).
+This project aims to provide a easy-to-use UI for generating StackViz sites.
+Users should be able to paste in a URL, select a list of matches, and then have
+a StackViz site generated on demand. The actual contents of the generated site
+should depend on what artifacts can be scraped from the job output (e.g.
+subunit, dstat, possibly more in the future).
 
 Current State
 -------------
-This project is currently working towards a working proof-of-concept. Components are making varying degrees of progress toward this:
+This project is currently working towards a working proof-of-concept. Components
+are making varying degrees of progress toward this:
 
 * API: mostly feature-complete, still needs input validation and cleanup jobs
 * Workers: mostly feature-complete, still needs input validation
-* Frontend: WIP, nothing ready to show yet
+* Frontend: WIP, see :code:`public/`
 * StackViz support: WIP
 
 Usage - Server
 --------------
-The server implementation is currently incomplete and very much in flux. Right now it uses MySQL for persistent storage with a Celery task queue (using Redis as a broker). In production the web UI (static HTML) and API server (python+flask) should be run behind Nginx or Apache.
+The server implementation is currently incomplete and very much in flux. Right
+now it uses MySQL for persistent storage with a Celery task queue (using Redis
+as a broker). In production the web UI (static HTML) and API server
+(python+flask) should be run behind Nginx or Apache.
 
 The current requirements are as follows:
 
-* MySQL server on localhost, with empty database :code:`stackviz`, user :code:`stackviz`, password :code:`stackviz`
+* MySQL server on localhost, with empty database :code:`stackviz`, user
+  :code:`stackviz`, password :code:`stackviz`
 * Redis server on localhost, default port, no authentication (will use db #0)
 * A celery worker: :code:`celery -A stackviz_deployer.tasks.tasks worker`
 * The API server: :code:`PYTHONPATH="." python -mstackviz_deployer.api.api`
 
-Note that the MySQL database could get large relatively fast as gzipped artifacts are stored as blobs for the moment. That said, there should be no harm in purging records after some relatively short time limit (e.g. 7 days). Even so, one processed dataset (gzipped in the database, without logging) should be around 250 KB.
+Note that the MySQL database could get large relatively fast as gzipped
+artifacts are stored as blobs for the moment. That said, there should be no harm
+in purging records after some relatively short time limit (e.g. 7 days). Even
+so, one processed dataset (gzipped in the database, without logging) should be
+around 250 KB.
 
 Usage - Frontend
 ----------------
-The frontend is currently a WIP, this section will be updated when it is added to the repository.
+The frontend is a plain HTML and JS site which can be found under the
+:code:`public/` directory.
+
+Usage - Dev Server
+------------------
+A small development server can be used to serve the frontend and proxy the API server to simulate a production environment. To use, first run the dev API server and then:
+
+    sudo npm install -g fe-dev-server
+    fds
+
+The server will start on port 5001 an will serve a proxied API server at :code:`http://localhost:5001/api`. The frontend should be available by browsing to http://localhost:5001/.
+
 
 Usage - API
 -----------
