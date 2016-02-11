@@ -1,0 +1,11 @@
+{
+  "name": "stackviz-deployer",
+  "version": "0.0.0",
+  "description": "stackviz-deployer",
+  "repository": "none",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "eslint": "^1.10.3",
+    "eslint-config-openstack": "^1.2.3"
+  }
+}
