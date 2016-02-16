@@ -28,6 +28,28 @@ GERRIT_ALLOWED_HOSTS = ['review.openstack.org']
 LOGS_ALLOWED_HOSTS = ['logs.openstack.org']
 
 
+def _create_empty_message():
+    return {
+        'index': 0,
+        'status': None,
+        'ci_username': None,
+        'pipeline': None,
+        'change_id': None,
+        'revision': None,
+        'change_project': None,
+        'change_subject': None,
+        'jobs': []
+    }
+
+
+def _create_job(name=None, url=None, status=None):
+    return {
+        'name': name,
+        'url': url,
+        'status': status
+    }
+
+
 def _gerrit_urls_filtered(change_id, revision=None):
     listing = gerrit_list.GerritListing(change_id)
 
@@ -39,18 +61,22 @@ def _gerrit_urls_filtered(change_id, revision=None):
 
     ret = []
     for message in listing.revisions[revision]:
+        m = _create_empty_message()
+        m.update({
+            'index': message.index,
+            'status': message.build_status,
+            'ci_username': message.author['username'],
+            'pipeline': message.pipeline,
+            'change_id': change_id,
+            'revision': revision,
+            'change_project': listing.change_project,
+            'change_subject': listing.change_subject
+        })
+
         for job in message.jobs.values():
-            ret.append({
-                'name': job.name,
-                'url': job.url,
-                'status': job.status,
-                'ci_username': message.author['username'],
-                'pipeline': message.pipeline,
-                'change_id': change_id,
-                'revision': revision,
-                'change_project': listing.change_project,
-                'change_subject': listing.change_subject
-            })
+            m['jobs'].append(_create_job(job.name, job.url, job.status))
+
+        ret.append(m)
 
     return ret
 
@@ -69,21 +95,22 @@ def _parse_fragment(fragment):
 def _parse_logs_path(path):
     """Extract job information from a logs.openstack.org URL."""
     tokens = path.split('/')
-    ret = {}
+    artifact = {}
+    job = {}
 
     if len(tokens) >= 3:
-        ret['change_id'] = int(tokens[2])
+        artifact['change_id'] = int(tokens[2])
 
     if len(tokens) >= 4:
-        ret['revision'] = int(tokens[3])
+        artifact['revision'] = int(tokens[3])
 
     if len(tokens) >= 5:
-        ret['pipeline'] = tokens[4]
+        artifact['pipeline'] = tokens[4]
 
     if len(tokens) >= 6:
-        ret['name'] = tokens[5]
+        job['name'] = tokens[5]
 
-    return ret
+    return artifact, job
 
 
 def get_matching_artifact_urls(user_input):
@@ -122,31 +149,26 @@ def get_matching_artifact_urls(user_input):
 
     # direct link to job output
     if parsed.hostname in LOGS_ALLOWED_HOSTS:
-        artifact_info = {
-            'name': 'direct-link',
-            'url': user_input,
-            'status': None,
-            'ci_username': None,
-            'pipeline': None,
-            'change_id': None,
-            'revision': None,
-            'change_project': None,
-            'change_subject': None
-        }
+        artifact_info = _create_empty_message()
+        artifact_job = _create_job('direct-link', user_input)
+        artifact_info['jobs'].append(artifact_job)
 
-        path_parsed = _parse_logs_path(parsed.path)
-        artifact_info.update(path_parsed)
+        parsed_artifact_info, parsed_job_info = _parse_logs_path(parsed.path)
+        artifact_info.update(parsed_artifact_info)
+        artifact_job.update(parsed_job_info)
 
-        if 'change_id' in path_parsed:
+        if 'change_id' in parsed_artifact_info:
             # try to fetch the gerrit change to fill in missing details
             try:
-                listing = gerrit_list.GerritListing(path_parsed['change_id'])
+                listing = gerrit_list.GerritListing(
+                    parsed_artifact_info['change_id'])
                 artifact_info['change_project'] = listing.change_project
                 artifact_info['change_subject'] = listing.change_subject
 
                 job = listing.get_job_by_url(user_input)
                 if job:
                     artifact_info['status'] = job.status
+                    artifact_job['status'] = job.status
             except requests.HTTPError:
                 pass
 

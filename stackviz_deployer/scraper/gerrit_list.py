@@ -77,7 +77,8 @@ class CIJob:
 
 
 class CIMessage:
-    def __init__(self, message):
+    def __init__(self, index, message):
+        self.index = index
         self.author = message['author']
         self.date = message['date']
         self.revision = message['_revision_number']
@@ -137,7 +138,7 @@ class GerritListing:
         self.change_project = change['project']
         self.change_subject = change['subject']
 
-        for message in change['messages']:
+        for i, message in enumerate(change['messages']):
             # ignore author-less CI messages ("change has been merged", etc)
             if 'author' not in message:
                 continue
@@ -148,10 +149,10 @@ class GerritListing:
                     self.revisions[rev] = []
 
                 try:
-                    self.revisions[rev].append(CIMessage(message))
+                    self.revisions[rev].append(CIMessage(i, message))
                 except InvalidMessageError:
                     pass
-    
+
     def iter_jobs(self):
         """Iterate over all jobs in this Gerrit listing.
 
@@ -164,7 +165,7 @@ class GerritListing:
 
     def get_job_by_url(self, url):
         """Attempt to locate a particular job among all messages by URL.
-        
+
         :param url: the job URL to match against
         :return: a CIJob or None
         """

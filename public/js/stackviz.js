@@ -21,8 +21,8 @@ $(document).ready(function() {
 
   var input = $('#input');
   var button = $('#button');
-  var resultsRow = $('#results-row');
-  var resultsList = $('#results-list');
+  var results = $('#results');
+  var resultsContainer = $('#results-container');
   var resultsError = $('#results-error');
 
   var showExample = function() {
@@ -30,59 +30,77 @@ $(document).ready(function() {
     input.attr('placeholder', 'e.g. ' + ex);
   };
 
+  var createResultRow = function(artifact) {
+    var row = $('<div>', { 'class': 'row' });
+    var col = $('<div>', { 'class': 'col-md-12' });
+
+    console.log(artifact);
+
+    var panel = $('<div>', { 'class': 'panel'});
+    if (artifact.status === 'success') {
+      panel.addClass('panel-success');
+    } else if (artifact.status === 'failed') {
+      panel.addClass('panel-danger');
+    } else {
+      panel.addClass('panel-default');
+    }
+
+    var heading = $('<div>', { 'class': 'panel-heading' });
+    heading.append($('<h3>', {
+      'class': 'panel-title',
+      'text': artifact.change_subject + ' - ' +
+        ' (' + artifact.change_project + ' #' +
+        artifact.change_id + ',' + artifact.revision + ' - ' +
+        artifact.ci_username + ' ' + artifact.pipeline + ')'
+    }));
+    panel.append(heading);
+
+    var list = $('<ul>', { 'class': 'list-group' });
+    artifact.jobs.forEach(function(job, i) {
+      var item = $('<li>', {
+        'class': 'list-group-item',
+        'text': job.name + ' (' + job.status + ')'
+      });
+
+      if (job.status === 'FAILURE') {
+        item.addClass('list-group-item-danger');
+      }
+
+      list.append(item);
+    });
+    panel.append(list);
+
+    col.append(panel);
+    row.append(col);
+    return row;
+  };
+
   var updateResults = function(data) {
-    resultsRow.show();
+    results.show();
 
     if (!data.results) {
       resultsError.show();
-      resultsList.hide();
+      resultsContainer.hide();
       return;
     }
 
     resultsError.hide();
-    resultsList.show();
+    resultsContainer.show();
 
-    resultsList.empty();
+    resultsContainer.empty();
     data.results.forEach(function(r, i) {
-      var item = $('<a>', {
-        'class': 'list-group-item'
-      });
+      var row = createResultRow(r);
 
-      if (r.status === 'FAILURE') {
-        item.addClass('list-group-item-danger');
-      } else if (r.status === 'SUCCESS') {
-        item.addClass('list-group-item-success');
-      }
-
-      item.append($('<h4>', {
-        'class': 'list-group-item-heading',
-        'text': r.name + ' (' + r.change_project + ' #' + r.change_id + ',' + r.revision + ')'
-      }));
-
-      var text = $('<p>', {'class': 'list-group-item-text'}).appendTo(item);
-
-      var textList = $('<ul>').appendTo(text);
-
-      textList.append($('<li>Status: ' + r.status + '</li>'));
-
-      if (r.pipeline) {
-        textList.append($('<li>Pipeline: ' + r.pipeline + '</li>'));
-      }
-
-      if (r.ci_username) {
-        textList.append($('<li>CI User: ' + r.ci_username + '</li>'));
-      }
-
-      resultsList.append(item);
+      resultsContainer.append(row);
     });
   };
 
   var fetchResults = function() {
-    resultsRow.hide();
+    results.hide();
 
     var q = input.val();
     if (!q || !q.trim()) {
-      resultsRow.hide();
+      results.hide();
       return;
     }
 

@@ -2,7 +2,7 @@
   "extends" : "openstack",
 
   "env" : {
-    "browser": true,
+    "browser": true
   },
 
   "rules" : {
