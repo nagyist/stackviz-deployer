@@ -34,8 +34,6 @@ $(document).ready(function() {
     var row = $('<div>', { 'class': 'row' });
     var col = $('<div>', { 'class': 'col-md-12' });
 
-    console.log(artifact);
-
     var panel = $('<div>', { 'class': 'panel'});
     if (artifact.status === 'success') {
       panel.addClass('panel-success');
@@ -78,7 +76,7 @@ $(document).ready(function() {
   var updateResults = function(data) {
     results.show();
 
-    if (!data.results) {
+    if (data.results.length === 0) {
       resultsError.show();
       resultsContainer.hide();
       return;
@@ -116,7 +114,7 @@ $(document).ready(function() {
     });
   };
 
-  input.on('keyup', debounce(fetchResults, 500));
+  input.on('input', debounce(fetchResults, 500));
   button.on('click', fetchResults);
 
   setInterval(showExample, 3000);
