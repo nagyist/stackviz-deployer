@@ -6,10 +6,28 @@
     display: none;
 }
 
+#results a {
+    cursor: pointer;
+}
+
 #results-error {
     display: none;
 }
 
 #results-list ul {
     margin-bottom: 0;
+}
+
+#overlay {
+    display: none;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 5em;
+
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
 }

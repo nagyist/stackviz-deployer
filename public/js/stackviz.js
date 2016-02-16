@@ -24,10 +24,71 @@ $(document).ready(function() {
   var results = $('#results');
   var resultsContainer = $('#results-container');
   var resultsError = $('#results-error');
+  var overlay = $('#overlay');
+  var overlayLabel = $('#overlay a');
+  var overlayUuid = $('#overlay-uuid');
+  var overlayStatus = $('#overlay-status');
 
   var showExample = function() {
     var ex = examples[Math.floor(Math.random() * examples.length)];
     input.attr('placeholder', 'e.g. ' + ex);
+  };
+
+  var showOverlay = function(url, uuid) {
+    overlayLabel.attr('href', url);
+    overlayLabel.text(url);
+    overlayUuid.text(uuid);
+
+    overlay.show();
+  };
+
+  var hideOverlay = function() {
+    overlay.hide();
+  };
+
+  var checkStatus = function(uuid) {
+    $.ajax({
+      url: '/api/status',
+      type: 'POST',
+      contentType: 'application/json;  charset=utf-8',
+      dataType: 'json',
+      data: JSON.stringify({ q: uuid }),
+      success: function(data) {
+        overlayStatus.text(data.status);
+
+        if (data.status.toLowerCase() === 'finished') {
+          // TODO: redirect to stackviz site
+        } else {
+          setTimeout(function() {
+            checkStatus(uuid);
+          }, 1000);
+        }
+      }
+    });
+  };
+
+  var requestScrape = function(artifact, job) {
+    $.ajax({
+      url: '/api/scrape',
+      type: 'POST',
+      contentType: 'application/json;  charset=utf-8',
+      dataType: 'json',
+      data: JSON.stringify({
+        change_id: artifact.change_id,
+        change_project: artifact.change_project,
+        change_subject: artifact.change_subject,
+        ci_username: artifact.ci_username,
+        name: job.name,
+        pipeline: artifact.pipeline,
+        revision: artifact.revision,
+        status: job.status,
+        url: job.url
+      }),
+      success: function(data) {
+        showOverlay(job.url, data.uuid);
+        checkStatus(data.uuid);
+      }
+    });
   };
 
   var createResultRow = function(artifact) {
@@ -53,11 +114,15 @@ $(document).ready(function() {
     }));
     panel.append(heading);
 
-    var list = $('<ul>', { 'class': 'list-group' });
+    var list = $('<div>', { 'class': 'list-group' });
     artifact.jobs.forEach(function(job, i) {
-      var item = $('<li>', {
+      var item = $('<a>', {
         'class': 'list-group-item',
         'text': job.name + ' (' + job.status + ')'
+      });
+
+      item.click(function() {
+        requestScrape(artifact, job);
       });
 
       if (job.status === 'FAILURE') {
