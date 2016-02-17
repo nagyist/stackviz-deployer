@@ -57,7 +57,11 @@ $(document).ready(function() {
         overlayStatus.text(data.status);
 
         if (data.status.toLowerCase() === 'finished') {
-          // TODO: redirect to stackviz site
+          overlayStatus.text('redirecting...');
+
+          setTimeout(function() {
+            window.location.assign('/s/' + uuid + '/');
+          }, 1000);
         } else {
           setTimeout(function() {
             checkStatus(uuid);
