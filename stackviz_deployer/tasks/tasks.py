@@ -47,7 +47,7 @@ def json_date_handler(o):
     return None
 
 
-def collect_subunit(artifact):
+def collect_tempest_subunit(artifact):
     r = requests.get(artifact.abs_url())
     if int(r.headers.get('content-length')) > ARTIFACT_MAX_SIZE:
         raise ScrapeError('Subunit artifact too large.')
@@ -66,7 +66,69 @@ def collect_subunit(artifact):
     compressed.seek(0)
 
     return ArtifactBlob(id=uuid.uuid4(),
-                        artifact_type='subunit',
+                        artifact_type='tempest-subunit',
+                        content_type='application/json',
+                        content_encoding='gzip',
+                        data=compressed.read()), data
+
+
+def collect_tempest_stats(raw_data):
+    start = None
+    end = None
+    total_duration = 0
+    failures = []
+    skips = []
+
+    for entry in raw_data:
+        # find min/max dates
+        entry_start, entry_end = entry['timestamps']
+        if start is None or entry_start < start:
+            start = entry_start
+
+        if end is None or entry_end > end:
+            end = entry_end
+
+        total_duration += entry['duration']
+
+        # find details for unsuccessful tests (fail or skip)
+        if entry['status'] == 'fail':
+            # if available, the error message will be the last non-empty line
+            # of the traceback
+            msg = None
+            if 'traceback' in entry['details']:
+                msg = entry['details']['traceback'].strip().splitlines()[-2:]
+                if 'Details' not in msg[1]:
+                    msg.remove(msg[0])
+
+            failures.append({
+                'name': entry['name'],
+                'duration': entry['duration'],
+                'details': msg
+            })
+        elif entry['status'] == 'skip':
+            skips.append({
+                'name': entry['name'],
+                'duration': entry['duration'],
+                'details': entry['details'].get('reason')
+            })
+
+    data = {
+        'count': len(raw_data),
+        'start': start,
+        'end': end,
+        'total_duration': total_duration,
+        'failures': failures,
+        'skips': skips
+    }
+
+    compressed = StringIO()
+    with gzip.GzipFile(fileobj=compressed, mode='wb') as f:
+        json.dump(data, f, default=json_date_handler)
+
+    compressed.seek(0)
+
+    return ArtifactBlob(id=uuid.uuid4(),
+                        artifact_type='tempest-stats',
                         content_type='application/json',
                         content_encoding='gzip',
                         data=compressed.read())
@@ -115,7 +177,11 @@ def request_scrape(task_id):
         artifact = artifacts.get_file('testrepository.subunit',
                                       'testrepository.subunit.gz')
         if artifact:
-            blob = collect_subunit(artifact)
+            blob, raw = collect_tempest_subunit(artifact)
+            blob.task_id = db_task.id
+            database.session.add(blob)
+
+            blob = collect_tempest_stats(raw)
             blob.task_id = db_task.id
             database.session.add(blob)
 
