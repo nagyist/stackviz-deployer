@@ -1,4 +1,5 @@
-module.exports = {
-	'get::/': 'index.html'
-};
+'use strict';
 
+module.exports = {
+  'get::/': 'index.html'
+};

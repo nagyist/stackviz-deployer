@@ -55,18 +55,27 @@ The frontend is a plain HTML and JS site which can be found under the
 
 Usage - Dev Server
 ------------------
-A small development server can be used to serve the frontend and proxy the API server to simulate a production environment. To use, first run the dev API server and then:
+A small development server can be used to serve the frontend and proxy the API
+server to simulate a production environment. To use, first run the dev API
+server and then::
 
     sudo npm install -g fe-dev-server
     fds
 
-The server will start on port 5001 an will serve a proxied API server at :code:`http://localhost:5001/api`. The frontend should be available by browsing to http://localhost:5001/.
+The server will start on port 5001 an will serve a proxied API server at
+:code:`http://localhost:5001/api`. The frontend should be available by browsing
+to http://localhost:5001/.
 
+Assuming the normal StackViz dev server is running on its default port (3000),
+it will also be proxied so requests to :code:`/s/[uuid]/` will load StackViz
+as expected. If all goes well, you should have a fully-functional development
+environment.
 
 Usage - API
 -----------
 
-Examples using `HTTPie <https://github.com/jkbrzt/httpie>`_  and `jq <https://stedolan.github.io/jq/>`_ with the dev server:
+Examples using `HTTPie <https://github.com/jkbrzt/httpie>`_  and
+`jq <https://stedolan.github.io/jq/>`_ with the dev server:
 
 * List the latest Jenkins results for a Gerrit change (one entry per job)::
 
@@ -99,7 +108,8 @@ Examples using `HTTPie <https://github.com/jkbrzt/httpie>`_  and `jq <https://st
 
     $ http post localhost:5000/list q='https://review.openstack.org/#/c/271726/'
 
-* List a job directly from the artifact URL (will parse and look up Gerrit details when possible)::
+* List a job directly from the artifact URL (will parse and look up Gerrit
+  details when possible)::
 
     $ http post localhost:5000/list q='http://logs.openstack.org/26/271726/2/gate/gate-stackviz-python27/937cf7b/'
     HTTP/1.0 200 OK
@@ -187,7 +197,8 @@ Examples using `HTTPie <https://github.com/jkbrzt/httpie>`_  and `jq <https://st
         "url": "http://logs.openstack.org/24/269624/19/check/gate-tempest-dsvm-full/84f9b4a/"
     }
 
-* Fetch an artifact blob (will have encoding and content type set appropriately)::
+* Fetch an artifact blob (will have encoding and content type set
+  appropriately)::
 
     $ http get localhost:5000/blob/09890181-4149-4cb2-82e3-c27f8301db03 --headers
     HTTP/1.0 200 OK
