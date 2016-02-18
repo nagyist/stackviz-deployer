@@ -12,12 +12,23 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import os
+
 from sqlalchemy import create_engine
+from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-engine = create_engine('mysql+pymysql://stackviz:stackviz@localhost/stackviz',
-                       pool_recycle=3600)
+
+# override using environment variables if available
+url = URL('mysql+pymysql',
+          username=os.environ.get('MYSQL_ENV_MYSQL_USER', 'stackviz'),
+          password=os.environ.get('MYSQL_ENV_MYSQL_PASSWORD', 'stackviz'),
+          host=os.environ.get('MYSQL_PORT_3306_TCP_ADDR', 'localhost'),
+          port=int(os.environ.get('MYSQL_PORT_3306_TCP_POST', '3306')),
+          database=os.environ.get('MYSQL_ENV_MYSQL_DATABASE', 'stackviz'))
+
+engine = create_engine(url, pool_recycle=3600)
 
 session = scoped_session(sessionmaker(autocommit=False,
                                       autoflush=False,
