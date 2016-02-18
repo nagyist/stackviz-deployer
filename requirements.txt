@@ -9,6 +9,7 @@ simplejson>=2.2.0  # MIT
 celery>=3.1.20
 redis>=2.10.0  # MIT
 flask
+PyMySQL>=0.6.2  # MIT License
 sqlalchemy
 sqlalchemy-utils  # BSD License
 testtools>=0.9.30
