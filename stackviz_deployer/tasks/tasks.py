@@ -15,6 +15,7 @@
 import datetime
 import gzip
 import json
+import os
 import requests
 import uuid
 
@@ -30,8 +31,10 @@ from stackviz_deployer.scraper import url_matcher, artifacts_list
 
 
 ARTIFACT_MAX_SIZE = 1024 * 1024 * 32  # 20 MiB
+REDIS_HOST = os.environ.get('REDIS_PORT_6379_TCP_ADDR', 'localhost')
+REDIS_PORT = os.environ.get('REDIS_PORT_6379_TCP_PORT', '6379')
 
-app = Celery('tasks', broker='redis://localhost:6379/0')
+app = Celery('tasks', broker='redis://{}:{}/0'.format(REDIS_HOST, REDIS_PORT))
 app.conf.CELERY_TASK_SERIALIZER = 'json'
 app.conf.CELERY_RESULT_SERIALIZER = 'json'
 
