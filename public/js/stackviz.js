@@ -54,7 +54,11 @@ $(document).ready(function() {
       dataType: 'json',
       data: JSON.stringify({ q: uuid }),
       success: function(data) {
-        overlayStatus.text(data.status);
+        var text = data.status;
+        if (text === 'error' && data.message) {
+          text += ' (' + data.message + ')';
+        }
+        overlayStatus.text(text);
 
         if (data.status.toLowerCase() === 'finished') {
           overlayStatus.text('redirecting...');
@@ -62,7 +66,7 @@ $(document).ready(function() {
           setTimeout(function() {
             window.location.assign('/s/' + uuid + '/');
           }, 1000);
-        } else {
+        } else if (data.status.toLowerCase() !== 'error') {
           setTimeout(function() {
             checkStatus(uuid);
           }, 1000);

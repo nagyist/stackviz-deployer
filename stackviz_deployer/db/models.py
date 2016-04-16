@@ -35,7 +35,8 @@ class ScrapeTask(Base):
     __table_args__ = {'mysql_engine': 'InnoDB'}
 
     id = Column(UUIDType(binary=False), primary_key=True)
-    status = Column(String(63), nullable=False, default='new')
+    status = Column(String(63), nullable=False, default='new', index=True)
+    message = Column(String(255))
     date = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     change_id = Column(Integer, index=True)
@@ -61,6 +62,7 @@ class ArtifactBlob(Base):
                      ForeignKey('scrape_tasks.id'),
                      index=True)
 
+    artifact_name = Column(String(127))
     artifact_type = Column(String(63))
     content_type = Column(String(63))
     content_encoding = Column(String(63))

@@ -12,25 +12,20 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import datetime
-import gzip
-import json
 import os
 import requests
 import uuid
 
-from StringIO import StringIO
-from urlparse import urlparse
-
 from celery import Celery
 
 from stackviz_deployer.db import database
-from stackviz_deployer.db.models import ScrapeTask, ArtifactBlob
-from stackviz_deployer.parser import subunit_parser
-from stackviz_deployer.scraper import url_matcher, artifacts_list
+from stackviz_deployer.db.models import ScrapeTask
+from stackviz_deployer.scraper import artifacts_list
+from stackviz_deployer.tasks import subunit_artifacts
 
 
-ARTIFACT_MAX_SIZE = 1024 * 1024 * 32  # 20 MiB
+# connection settings for redis (as needed by celery), using docker-style ENV
+# when available
 REDIS_HOST = os.environ.get('REDIS_PORT_6379_TCP_ADDR', 'localhost')
 REDIS_PORT = os.environ.get('REDIS_PORT_6379_TCP_PORT', '6379')
 
@@ -38,123 +33,11 @@ app = Celery('tasks', broker='redis://{}:{}/0'.format(REDIS_HOST, REDIS_PORT))
 app.conf.CELERY_TASK_SERIALIZER = 'json'
 app.conf.CELERY_RESULT_SERIALIZER = 'json'
 
+# a list of all available scanner functions (to be extended later)
+SCANNER_FUNCTIONS = subunit_artifacts.SCANNER_FUNCTIONS
 
-class ScrapeError(Exception):
-    pass
-
-
-def json_date_handler(o):
-    if isinstance(o, (datetime.datetime, datetime.date)):
-        return o.isoformat()
-
-    return None
-
-
-def collect_tempest_subunit(artifact):
-    r = requests.get(artifact.abs_url())
-    if int(r.headers.get('content-length')) > ARTIFACT_MAX_SIZE:
-        raise ScrapeError('Subunit artifact too large.')
-
-    subunit_content = StringIO(r.content)
-    if r.headers.get('content-type') == 'application/x-gzip':
-        with gzip.GzipFile(fileobj=subunit_content, mode='rb') as f:
-            subunit_content = StringIO(f.read())
-
-    data = subunit_parser.convert_stream(subunit_content,
-                                         strip_details=True)
-    compressed = StringIO()
-    with gzip.GzipFile(fileobj=compressed, mode='wb') as f:
-        json.dump(data, f, default=json_date_handler)
-
-    compressed.seek(0)
-
-    return ArtifactBlob(id=uuid.uuid4(),
-                        artifact_type='tempest-subunit',
-                        content_type='application/json',
-                        content_encoding='gzip',
-                        data=compressed.read()), data
-
-
-def collect_tempest_stats(raw_data):
-    start = None
-    end = None
-    total_duration = 0
-    failures = []
-    skips = []
-
-    for entry in raw_data:
-        # find min/max dates
-        entry_start, entry_end = entry['timestamps']
-        if start is None or entry_start < start:
-            start = entry_start
-
-        if end is None or entry_end > end:
-            end = entry_end
-
-        total_duration += entry['duration']
-
-        # find details for unsuccessful tests (fail or skip)
-        if entry['status'] == 'fail':
-            # if available, the error message will be the last non-empty line
-            # of the traceback
-            msg = None
-            if 'traceback' in entry['details']:
-                msg = entry['details']['traceback'].strip().splitlines()[-2:]
-                if 'Details' not in msg[1]:
-                    msg.remove(msg[0])
-
-            failures.append({
-                'name': entry['name'],
-                'duration': entry['duration'],
-                'details': msg
-            })
-        elif entry['status'] == 'skip':
-            skips.append({
-                'name': entry['name'],
-                'duration': entry['duration'],
-                'details': entry['details'].get('reason')
-            })
-
-    data = {
-        'count': len(raw_data),
-        'start': start,
-        'end': end,
-        'total_duration': total_duration,
-        'failures': failures,
-        'skips': skips
-    }
-
-    compressed = StringIO()
-    with gzip.GzipFile(fileobj=compressed, mode='wb') as f:
-        json.dump(data, f, default=json_date_handler)
-
-    compressed.seek(0)
-
-    return ArtifactBlob(id=uuid.uuid4(),
-                        artifact_type='tempest-stats',
-                        content_type='application/json',
-                        content_encoding='gzip',
-                        data=compressed.read())
-
-
-def collect_dstat(artifact):
-    r = requests.get(artifact.abs_url(), stream=True)
-
-    # reuse pre-gzipped data if possible
-    if r.headers.get('content-encoding') == 'gzip':
-        compressed = r.raw
-    else:
-        compressed = StringIO()
-        with gzip.GzipFile(fileobj=compressed, mode='wb') as f:
-            for chunk in r.iter_content():
-                f.write(chunk)
-        compressed.seek(0)
-
-    return ArtifactBlob(id=uuid.uuid4(),
-                        artifact_type='dstat',
-                        content_type='text/csv',
-                        content_encoding='gzip',
-                        data=compressed.read())
+# TODO: should also have a list of validator functions (of which >= 1 must
+# return True)
 
 
 @app.task
@@ -167,35 +50,45 @@ def request_scrape(task_id):
 
     # TODO validate input (check url, etc...)
 
+    # mark the task as pending so clients can see some degree of feedback
     db_task.status = 'pending'
     database.session.add(db_task)
     database.session.commit()
 
     try:
         artifacts = artifacts_list.DirectoryListing(db_task.url)
-        if artifacts.has_directory('logs'):
-            # if a 'logs' dir exists, scan it instead
-            artifacts = artifacts.get_directory('logs').browse()
 
-        artifact = artifacts.get_file('testrepository.subunit',
-                                      'testrepository.subunit.gz')
-        if artifact:
-            blob, raw = collect_tempest_subunit(artifact)
-            blob.task_id = db_task.id
-            database.session.add(blob)
+        # all blobs found by the crawler
+        found_blobs = []
 
-            blob = collect_tempest_stats(raw)
-            blob.task_id = db_task.id
-            database.session.add(blob)
+        # of found_blobs, the # that are actually useful as standalone data
+        # (e.g., if we only find dstat, we should error regardless since that
+        # is uninteresting by itself)
+        primary_blob_count = 0
 
-        artifact = artifacts.get_file('dstat-csv.txt', 'dstat-csv.txt.gz')
-        if artifact:
-            blob = collect_dstat(artifact)
-            blob.task_id = db_task.id
-            database.session.add(blob)
-    except (ScrapeError, requests.HTTPError) as e:
+        # run all scanner functions to scrape this directory listing
+        for func in SCANNER_FUNCTIONS:
+            found, primary = func(artifacts)
+
+            found_blobs.extend(found)
+            primary_blob_count += primary
+
+        # make sure we found at least 1 primary artifact, otherwise fail the
+        # job (i.e. 'nothing to see here' error)
+        if primary_blob_count > 0:
+            for blob in found_blobs:
+                blob.task_id = db_task.id
+                database.session.add(blob)
+        else:
+            db_task.status = 'error'
+            db_task.message = 'no supported artifacts could be found'
+    except Exception as e:
         print e
         db_task.status = 'error'
+        db_task.message = str(e)
 
-    db_task.status = 'finished'
+    if db_task.status != 'error':
+        db_task.status = 'finished'
+
+    database.session.add(db_task)
     database.session.commit()

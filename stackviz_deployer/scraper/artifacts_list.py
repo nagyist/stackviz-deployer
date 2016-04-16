@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import fnmatch
 import urlparse
 
 import bs4
@@ -32,6 +33,8 @@ class Artifact:
         self.entry_type = entry_type
         self.name = name
 
+        self.browse_cache = None
+
         if self.name.endswith('/'):
             self.name = self.name[:-1]
 
@@ -46,7 +49,10 @@ class Artifact:
             raise InvalidArtifactError(
                 'Cannot browse a non-directory artifact.')
 
-        return DirectoryListing(self.abs_url())
+        if not self.browse_cache:
+            self.browse_cache = DirectoryListing(self.abs_url())
+
+        return self.browse_cache
 
     def __repr__(self):
         return '%s(base_url=%s, rel_url=%s, entry_type=%s, name=%s)' % (
@@ -104,6 +110,17 @@ class DirectoryListing:
                 return f
 
         return None
+
+    def get_files_glob(self, *patterns):
+        ret = []
+
+        for f in self.files:
+            for pattern in patterns:
+                if fnmatch.fnmatch(f.name, pattern):
+                    ret.append(f)
+                    break
+
+        return ret
 
     def __repr__(self):
         return "%s(url='%s', directories=[%s], files=[%s])" % (

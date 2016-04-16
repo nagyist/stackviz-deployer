@@ -66,10 +66,12 @@ def request_status():
     if db_task:
         return jsonify({
             'uuid': str(db_task.id),
-            'status': db_task.status
+            'status': db_task.status,
+            'message': db_task.message
         })
     else:
         return jsonify({'error': 'not found'}), 404
+
 
 @app.route('/task', methods=['POST'])
 def request_task():
@@ -103,7 +105,10 @@ def request_task():
 
             return jsonify(ret), 200
         elif db_task.status == 'error':
-            return jsonify({'error': 'scrape task failed'})
+            return jsonify({
+                'error': 'scrape task failed',
+                'message': db_task.message
+            })
         else:
             return jsonify({'error': 'not ready yet'}), 202
     else:

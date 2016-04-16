@@ -103,6 +103,8 @@ class CIMessage:
         self.jobs = {}
         for job_line in lines[4:]:
             job = REGEX_JOB.match(job_line)
+            if not job:
+                continue
 
             self.jobs[job.group(1)] = CIJob(
                 job.group(1),
