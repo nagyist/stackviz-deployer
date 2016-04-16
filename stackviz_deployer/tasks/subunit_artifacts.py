@@ -63,6 +63,7 @@ def collect_subunit(artifact):
                         artifact_type='subunit',
                         content_type='application/json',
                         content_encoding='gzip',
+                        primary=True,
                         data=compressed.read()), data
 
 
@@ -126,6 +127,7 @@ def collect_subunit_stats(artifact, raw_data):
                         artifact_type='subunit-stats',
                         content_type='application/json',
                         content_encoding='gzip',
+                        primary=False,
                         data=compressed.read())
 
 
@@ -147,6 +149,7 @@ def collect_dstat(artifact):
                         artifact_type='dstat',
                         content_type='text/csv',
                         content_encoding='gzip',
+                        primary=False,
                         data=compressed.read())
 
 
@@ -157,18 +160,16 @@ def scan_subunit(listing):
         dirs.append(listing.get_directory('logs').browse())
 
     found = []
-    primary = 0
 
     for d in dirs:
         for artifact in d.get_files_glob('*.subunit', '*.subunit.gz'):
             blob, raw = collect_subunit(artifact)
             found.append(blob)
-            primary += 1
 
             blob = collect_subunit_stats(artifact, raw)
             found.append(blob)
 
-    return found, primary
+    return found
 
 
 def scan_dstat(listing):
@@ -184,7 +185,7 @@ def scan_dstat(listing):
             found.append(collect_dstat(artifact))
 
     # dstat is never a primary artifact, so always return [found], 0
-    return found, 0
+    return found
 
 
 SCANNER_FUNCTIONS = [

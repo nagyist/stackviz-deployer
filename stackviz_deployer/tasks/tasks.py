@@ -61,17 +61,15 @@ def request_scrape(task_id):
         # all blobs found by the crawler
         found_blobs = []
 
+        # run all scanner functions to scrape this directory listing
+        for func in SCANNER_FUNCTIONS:
+            found_blobs.extend(func(artifacts))
+
         # of found_blobs, the # that are actually useful as standalone data
         # (e.g., if we only find dstat, we should error regardless since that
         # is uninteresting by itself)
-        primary_blob_count = 0
-
-        # run all scanner functions to scrape this directory listing
-        for func in SCANNER_FUNCTIONS:
-            found, primary = func(artifacts)
-
-            found_blobs.extend(found)
-            primary_blob_count += primary
+        primary_blob_count = sum(map(lambda b: 1 if b.primary else 0,
+                                     found_blobs))
 
         # make sure we found at least 1 primary artifact, otherwise fail the
         # job (i.e. 'nothing to see here' error)

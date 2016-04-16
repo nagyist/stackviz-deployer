@@ -102,6 +102,7 @@ def request_task():
                     'artifact_type': artifact.artifact_type,
                     'content_type': artifact.content_type,
                     'content_encoding': artifact.content_encoding,
+                    'primary': artifact.primary
                 })
 
             return jsonify(ret), 200

@@ -16,7 +16,7 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import (Column, ForeignKey,
-                        Integer, String, DateTime)
+                        Integer, String, DateTime, Boolean)
 from sqlalchemy.dialects.mysql import MEDIUMBLOB
 from sqlalchemy.orm import relationship
 from sqlalchemy_utils import UUIDType
@@ -66,5 +66,6 @@ class ArtifactBlob(Base):
     artifact_type = Column(String(63))
     content_type = Column(String(63))
     content_encoding = Column(String(63))
+    primary = Column(Boolean)
 
     data = Column(MEDIUMBLOB)
