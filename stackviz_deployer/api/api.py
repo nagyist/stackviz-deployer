@@ -98,6 +98,7 @@ def request_task():
             for artifact in db_task.artifacts:
                 ret['artifacts'].append({
                     'id': artifact.id,
+                    'artifact_name': artifact.artifact_name,
                     'artifact_type': artifact.artifact_type,
                     'content_type': artifact.content_type,
                     'content_encoding': artifact.content_encoding,
