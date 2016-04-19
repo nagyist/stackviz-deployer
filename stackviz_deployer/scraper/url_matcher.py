@@ -94,21 +94,26 @@ def _parse_fragment(fragment):
 
 def _parse_logs_path(path):
     """Extract job information from a logs.openstack.org URL."""
-    tokens = path.split('/')
+    tokens = [token for token in path.split('/') if len(token) > 0]
     artifact = {}
     job = {}
 
-    if len(tokens) >= 3:
-        artifact['change_id'] = int(tokens[2])
+    if tokens[0].startswith('periodic'):
+        if len(tokens) >= 3:
+            artifact['pipeline'] = tokens[0]
+            job['name'] = tokens[1]
+    else:
+        if len(tokens) >= 2:
+            artifact['change_id'] = int(tokens[1])
 
-    if len(tokens) >= 4:
-        artifact['revision'] = int(tokens[3])
+        if len(tokens) >= 3:
+            artifact['revision'] = int(tokens[2])
 
-    if len(tokens) >= 5:
-        artifact['pipeline'] = tokens[4]
+        if len(tokens) >= 4:
+            artifact['pipeline'] = tokens[3]
 
-    if len(tokens) >= 6:
-        job['name'] = tokens[5]
+        if len(tokens) >= 5:
+            job['name'] = tokens[4]
 
     return artifact, job
 

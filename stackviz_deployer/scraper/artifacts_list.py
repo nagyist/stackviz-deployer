@@ -42,7 +42,10 @@ class Artifact:
         return self.entry_type == '[DIR]'
 
     def abs_url(self):
-        return urlparse.urljoin(self.base_url, self.rel_url)
+        url = self.base_url
+        if not url.endswith('/'):
+            url += '/'
+        return urlparse.urljoin(url, self.rel_url)
 
     def browse(self):
         if not self.is_dir():

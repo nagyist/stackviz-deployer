@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import logging
 import os
 import requests
 import uuid
@@ -23,6 +24,8 @@ from stackviz_deployer.db.models import ScrapeTask
 from stackviz_deployer.scraper import artifacts_list
 from stackviz_deployer.tasks import subunit_artifacts
 
+
+logger = logging.getLogger(__name__)
 
 # connection settings for redis (as needed by celery), using docker-style ENV
 # when available
@@ -55,6 +58,8 @@ def request_scrape(task_id):
     database.session.add(db_task)
     database.session.commit()
 
+    logger.info('Starting task %s, url=%s' % (str(task_id), db_task.url))
+
     try:
         artifacts = artifacts_list.DirectoryListing(db_task.url)
 
@@ -81,7 +86,7 @@ def request_scrape(task_id):
             db_task.status = 'error'
             db_task.message = 'no supported artifacts could be found'
     except Exception as e:
-        print e
+        logger.exception('Exception in task ' + str(task_id) + ': ' + str(e))
         db_task.status = 'error'
         db_task.message = str(e)
 
