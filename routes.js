@@ -1,5 +1,6 @@
 'use strict';
 
 module.exports = {
-  'get::/': 'index.html'
+  'get::/': 'index.html',
+  '/go/*': 'go.html'
 };

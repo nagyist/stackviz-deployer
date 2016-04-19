@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>StackViz</title>
+
+        <link href="/css/bootstrap.min.css" rel="stylesheet">
+        <link href="/css/stackviz.css" rel="stylesheet">
+    </head>
+    <body>
+        <div class="container" role="main">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="page-header">
+                        <h1>
+                            StackViz
+                            <small>
+                                An OpenStack CI build artifact visualizer.
+                            </small>
+                        </h1>
+                    </div>
+                </div>
+            </div>
+
+            <div id="status" class="row">
+                <div class="col-md-12">
+                    <h2 id="status-message">
+                        Loading...
+                    </h2>
+                    <p class="text-muted">This page will redirect when ready.</p>
+
+                    <ul>
+                        <li>
+                            <b>Job URL:</b>
+                            <a id="status-job">unknown</a>
+                        </li>
+                        <li>
+                            <b>Gerrit URL:</b>
+                            <a id="status-gerrit">unknown</a>
+                        </li>
+                    </ul>
+
+                    <p>
+                        <a href="/" class="btn btn-primary">StackViz Home</a>
+                        <a href="javascript:history.go(-1)" class="btn btn-default">Back</a>
+                    </p>
+                    <p>
+                        <small class="text-muted">
+                            Task UUID: <span id="status-uuid">unknown</span>
+                        </small>
+                    </p>
+                </div>
+            </div>
+
+            <div id="results" class="vspace">
+				<div class="row">
+	                <div class="col-md-12">
+	                    <h2>Results</h2>
+
+						<div id="results-error">
+							No results found for query.
+						</div>
+	                </div>
+				</div>
+				<div id="results-container"></div>
+            </div>
+        </div>
+
+        <script type="text/javascript" src="/js/jquery.min.js"></script>
+        <script type="text/javascript" src="/js/stackviz-go.js"></script>
+    </body>
+</html>

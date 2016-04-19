@@ -24,12 +24,6 @@ from sqlalchemy_utils import UUIDType
 from stackviz_deployer.db.database import Base
 
 
-class ScrapeStatus(enum.Enum):
-    new = 'new'
-    success = 'success'
-    error = 'error'
-
-
 class ScrapeTask(Base):
     __tablename__ = 'scrape_tasks'
     __table_args__ = {'mysql_engine': 'InnoDB'}

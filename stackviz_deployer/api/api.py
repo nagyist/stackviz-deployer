@@ -27,6 +27,12 @@ app.config['MAX_CONTENT_LENGTH'] = 8192
 database.init_db()
 
 
+def get_by_url(url):
+    return database.session.query(ScrapeTask).filter_by(
+        url=url,
+        status='success').first()
+
+
 @app.route('/scrape', methods=['POST'])
 def request_scrape():
     # TODO check for existing scrapes & validate input
