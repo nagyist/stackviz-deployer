@@ -14,7 +14,6 @@
 
 import logging
 import os
-import requests
 import uuid
 
 from celery import Celery
@@ -22,7 +21,7 @@ from celery import Celery
 from stackviz_deployer.db import database
 from stackviz_deployer.db.models import ScrapeTask
 from stackviz_deployer.scraper import artifacts_list
-from stackviz_deployer.tasks import subunit_artifacts
+from stackviz_deployer.tasks import subunit_artifacts, console_artifacts
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +36,9 @@ app.conf.CELERY_TASK_SERIALIZER = 'json'
 app.conf.CELERY_RESULT_SERIALIZER = 'json'
 
 # a list of all available scanner functions (to be extended later)
-SCANNER_FUNCTIONS = subunit_artifacts.SCANNER_FUNCTIONS
+SCANNER_FUNCTIONS = []
+SCANNER_FUNCTIONS.extend(subunit_artifacts.SCANNER_FUNCTIONS)
+SCANNER_FUNCTIONS.extend(console_artifacts.SCANNER_FUNCTIONS)
 
 # TODO: should also have a list of validator functions (of which >= 1 must
 # return True)

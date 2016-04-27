@@ -15,3 +15,4 @@ sqlalchemy
 sqlalchemy-utils  # BSD License
 testtools>=0.9.30
 testrepository>=0.0.18
+jenkins-job-builder
