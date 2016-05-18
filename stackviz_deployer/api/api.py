@@ -14,10 +14,13 @@
 
 import uuid
 
-from flask import Flask, jsonify, request
+from flask import Flask
+from flask import jsonify
+from flask import request
 
 from stackviz_deployer.db import database
-from stackviz_deployer.db.models import ScrapeTask, ArtifactBlob
+from stackviz_deployer.db.models import ArtifactBlob
+from stackviz_deployer.db.models import ScrapeTask
 from stackviz_deployer.scraper import url_matcher
 from stackviz_deployer.tasks import tasks
 
@@ -35,7 +38,7 @@ def get_by_url(url):
 
 @app.route('/scrape', methods=['POST'])
 def request_scrape():
-    # TODO check for existing scrapes & validate input
+    # TODO(Tim Buckley) check for existing scrapes & validate input
     listing_info = request.get_json()
 
     task_id = uuid.uuid4()

@@ -119,11 +119,11 @@ def _parse_logs_path(path):
 
 
 def get_matching_artifact_urls(user_input):
-    """
-    Find all matching artifact URLs for the given input string, and return a
-    list of dicts containing details about each artifact source. Inputs are
-    validated against a list of allowed hosts. Returned URLs should be
-    suitable for use with artifacts_list.
+    """Get matching artifact URLs for the given input string.
+
+    Returns a list of dicts containing details about each artifact source.
+    Inputs are validated against a list of allowed hosts. Returned URLs should
+    be suitable for use with artifacts_list.
 
     :param user_input: the input text to attempt to match
     :return: a list of artifact URL dicts

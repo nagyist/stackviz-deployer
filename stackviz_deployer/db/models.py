@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import enum
 from datetime import datetime
 
 from sqlalchemy import (Column, ForeignKey,

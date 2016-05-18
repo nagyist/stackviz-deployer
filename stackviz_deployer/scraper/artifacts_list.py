@@ -24,7 +24,7 @@ class InvalidArtifactError(Exception):
     pass
 
 
-class Artifact:
+class Artifact(object):
     """A single artifact from a directory listing"""
 
     def __init__(self, base_url, rel_url, entry_type, name):
@@ -67,7 +67,7 @@ class Artifact:
         )
 
 
-class DirectoryListing:
+class DirectoryListing(object):
     """A navigator for Apache 2 directory listings."""
 
     def __init__(self, url):

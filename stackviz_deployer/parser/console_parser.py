@@ -36,7 +36,7 @@ JJB_YAML_PATH = os.environ.get('JJB_YAML_PATH', 'project-config/jenkins/jobs')
 # Hack: we want to use Builder's file loading code, but we don't need a
 # Jenkins instance. (And using dummy params spams the console)
 # We'll just steal the method we need and give it default params
-class HackBuilder:
+class HackBuilder(object):
     load_files = Builder.__dict__['load_files']
 
     def __init__(self):
@@ -50,10 +50,10 @@ if os.path.exists(JJB_YAML_PATH):
 
 
 def job_name_matches_template(job_name, template):
-    """
-    Checks if the job name matches the job template string. For example, a job
-    named 'gate-stackviz-npm-run-test' will match a template string
-    'gate-{name}-npm-run-{command}'.
+    """Checks if the job name matches the job template string.
+
+    For example, a job named 'gate-stackviz-npm-run-test' will match a template
+    string 'gate-{name}-npm-run-{command}'.
 
     :param job_name: the job name to check
     :param template: the job name template to compare against
@@ -66,8 +66,8 @@ def job_name_matches_template(job_name, template):
 
 
 def get_builders_from_template(template):
-    """
-    Given a parsed JJB template, extract a list of builder name strings.
+    """Given a parsed JJB template, extract a list of builder name strings.
+
     Builders that accept parameters (written as dicts) will have parameters
     discarded and only the names will be included.
 
@@ -86,9 +86,7 @@ def get_builders_from_template(template):
 
 
 def get_job_builders(job_name):
-    """
-    Given a job name, return a list of JJB builder name strings defined for
-    the job's template.
+    """Return a list of JJB builder names for the given job.
 
     :param job_name: the job name to look up
     :return: a list of builder names, or None if not match is found

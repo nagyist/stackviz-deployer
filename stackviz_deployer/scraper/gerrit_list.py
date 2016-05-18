@@ -53,7 +53,7 @@ class InvalidMessageError(Exception):
     pass
 
 
-class CIJob:
+class CIJob(object):
     """A CI job result, with an associated name and artifact URL."""
 
     def __init__(self, name, url, status, duration):
@@ -76,7 +76,7 @@ class CIJob:
         )
 
 
-class CIMessage:
+class CIMessage(object):
     def __init__(self, index, message):
         self.index = index
         self.author = message['author']
@@ -122,7 +122,7 @@ class CIMessage:
         )
 
 
-class GerritListing:
+class GerritListing(object):
     """Extracts Jenkins build artifact URLs from Gerrit comments."""
 
     def __init__(self, change_id):

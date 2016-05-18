@@ -21,7 +21,8 @@ from celery import Celery
 from stackviz_deployer.db import database
 from stackviz_deployer.db.models import ScrapeTask
 from stackviz_deployer.scraper import artifacts_list
-from stackviz_deployer.tasks import subunit_artifacts, console_artifacts
+from stackviz_deployer.tasks import console_artifacts
+from stackviz_deployer.tasks import subunit_artifacts
 
 
 logger = logging.getLogger(__name__)
@@ -40,8 +41,8 @@ SCANNER_FUNCTIONS = []
 SCANNER_FUNCTIONS.extend(subunit_artifacts.SCANNER_FUNCTIONS)
 SCANNER_FUNCTIONS.extend(console_artifacts.SCANNER_FUNCTIONS)
 
-# TODO: should also have a list of validator functions (of which >= 1 must
-# return True)
+# TODO(Tim Buckley): should also have a list of validator functions (of which
+# >= 1 must return True)
 
 
 @app.task
@@ -52,7 +53,7 @@ def request_scrape(task_id):
         # shouldn't happen...
         return
 
-    # TODO validate input (check url, etc...)
+    # TODO(Tim Buckley) validate input (check url, etc...)
 
     # mark the task as pending so clients can see some degree of feedback
     db_task.status = 'pending'
