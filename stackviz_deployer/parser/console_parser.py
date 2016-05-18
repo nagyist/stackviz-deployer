@@ -44,8 +44,9 @@ class HackBuilder:
         self.plugins_list = []
         self.parser = None
 
-builder = HackBuilder()
-builder.load_files([JJB_YAML_PATH])
+if os.path.exists(JJB_YAML_PATH):
+    builder = HackBuilder()
+    builder.load_files([JJB_YAML_PATH])
 
 
 def job_name_matches_template(job_name, template):
@@ -92,6 +93,9 @@ def get_job_builders(job_name):
     :param job_name: the job name to look up
     :return: a list of builder names, or None if not match is found
     """
+    if not builder:
+        return None
+
     templates = builder.parser.data['job-template']
 
     # tuples of (template, wildcard count)
@@ -136,7 +140,7 @@ def parse_console(text):
                 script_names = get_job_builders(m.group('job'))
 
             current_script = {
-                'name': script_names.pop(0) if script_names else None,
+                'name': script_names.pop(0) if script_names else 'console',
                 'lines': []
             }
             scripts.append(current_script)
@@ -164,5 +168,3 @@ def parse_console(text):
         'scripts': scripts,
         'remaining': script_names
     }
-
-
