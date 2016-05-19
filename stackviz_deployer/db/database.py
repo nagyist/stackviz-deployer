@@ -25,7 +25,7 @@ url = URL('mysql+pymysql',
           username=os.environ.get('MYSQL_ENV_MYSQL_USER', 'stackviz'),
           password=os.environ.get('MYSQL_ENV_MYSQL_PASSWORD', 'stackviz'),
           host=os.environ.get('MYSQL_PORT_3306_TCP_ADDR', 'localhost'),
-          port=int(os.environ.get('MYSQL_PORT_3306_TCP_POST', '3306')),
+          port=int(os.environ.get('MYSQL_PORT_3306_TCP_PORT', '3306')),
           database=os.environ.get('MYSQL_ENV_MYSQL_DATABASE', 'stackviz'))
 
 engine = create_engine(url, pool_recycle=3600)

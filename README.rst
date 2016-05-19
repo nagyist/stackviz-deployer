@@ -24,15 +24,15 @@ are making varying degrees of progress toward this:
 
 * API: mostly feature-complete, still needs input validation and cleanup jobs
 * Workers: mostly feature-complete, still needs input validation
-* Frontend: WIP, see :code:`public/`
-* StackViz support: WIP
+* Frontend: basic implementation is finished, see :code:`public/`
+* StackViz support: done, see
 
 Usage - Server
 --------------
-The server implementation is currently incomplete and very much in flux. Right
-now it uses MySQL for persistent storage with a Celery task queue (using Redis
-as a broker). In production the web UI (static HTML) and API server
-(python+flask) should be run behind Nginx or Apache.
+The server implementation is reasonably complete and should be fine for simple
+deployments. Right now it uses MySQL for persistent storage with a Celery task
+queue (using Redis as a broker). In production the web UI (static HTML) and API
+server (python+flask) should be run behind Nginx or Apache.
 
 The current requirements are as follows:
 
@@ -42,16 +42,62 @@ The current requirements are as follows:
 * A celery worker: :code:`celery -A stackviz_deployer.tasks.tasks worker`
 * The API server: :code:`PYTHONPATH="." python -mstackviz_deployer.api.api`
 
+Several environment variables are also available to override defaults (using
+naming conventions for linked Docker containers):
+
+* :code:`MYSQL_ENV_MYSQL_USER`: MySQL user, default 'stackviz'
+* :code:`MYSQL_ENV_MYSQL_PASSWORD`: MySQL password, default 'stackviz'
+* :code:`MYSQL_ENV_MYSQL_DATABASE`: MySQL database, default 'stackviz'
+* :code:`MYSQL_PORT_3306_TCP_ADDR`: MySQL host address, default 'localhost'
+* :code:`MYSQL_PORT_3306_TCP_PORT`: MySQL port, default '3306'
+
 Note that the MySQL database could get large relatively fast as gzipped
 artifacts are stored as blobs for the moment. That said, there should be no harm
 in purging records after some relatively short time limit (e.g. 7 days). Even
 so, one processed dataset (gzipped in the database, without logging) should be
 around 250 KB.
 
+Usage - Production
+^^^^^^^^^^^^^^^^^^
+For production deployments, Nginx or Apache should be configured with the
+following routes (using nginx location syntax):
+
+* :code:`/ -> ./public/`
+* :code:`/api -> stackviz_deployer` (via uwsgi, mod_python, etc)
+* :code:`^/s/[A-Za-z0-9\-]+/(.*)$ -> ./stackviz/build/$1`
+* :code:`/go/* -> ./public/go.html`
+
+  * All non-file addresses should be rewritten to :code:`go.html` using
+    :code:`try_files` or similar
+
+For a working example, see the `Docker example`_ using nginx and uwsgi, or the
+dev nginx config at :code:`etc/nginx-dev.conf`.
+
+.. _Docker example: https://github.com/timothyb89/stackviz-deployer-docker
+
 Usage - Frontend
 ----------------
 The frontend is a plain HTML and JS site which can be found under the
-:code:`public/` directory.
+:code:`public/` directory. During development, it can be served using any HTTP
+server, such as :code:`twistd` or Python's built-in :code:`SimpleHTTPServer`.
+
+Note that the frontend does require special handling of the :code:`/go/` route
+which may complicate testing in development, see the dev server instructions
+below for tips.
+
+Usage - StackViz
+^^^^^^^^^^^^^^^^
+StackViz itself is also required, along with a special configuration file.
+
+#. A production build should be performed using :code:`gulp prod`
+#. The deployer config should be added to :code:`stackviz/build/data/` (see
+   :code:`etc/config.json`)
+
+The output, :code:`stackviz/build/`, should then be served as plain static files
+from the :code:`/s/[uuid]/*` route. During development, the normal StackViz dev
+server (:code:`gulp dev`) is generally appropriate, assuming the correct
+:code:`config.json` is added instead to :code:`app/data/` and the dev server is
+configured to proxy it as needed.
 
 Usage - Dev Server
 ------------------
@@ -70,6 +116,28 @@ Assuming the normal StackViz dev server is running on its default port (3000),
 it will also be proxied so requests to :code:`/s/[uuid]/` will load StackViz
 as expected. If all goes well, you should have a fully-functional development
 environment.
+
+Alternatively, an example nginx configuration suitable for development can be
+found at `etc/nginx-dev.conf`. This configuration handles routing between the
+various development servers and includes basic instructions for use in the file
+header.
+
+Usage - Extras
+--------------
+The deployer supports additional log types and parsers that StackViz proper
+can't support, particularly those that make more expensive network requests or
+need additional datasets. These are generally optional, but helpful.
+
+JJB Builder Names in Console Logs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Using JJB definitions, the :code:`console.html` parser can split and annotate
+console logs with the actual script names from :code:`project-config`'s YAML
+definitions. To load these definitions, either:
+
+* Clone :code:`project-config` to the working directory for the celery workers
+  (presumably just :code:`stackviz-deployer/`), or
+* Set the environment variable :code:`JJB_YAML_PATH` for celery workers (should
+  be :code:`/path/to/project-config/jenkins/jobs`)
 
 Usage - API
 -----------

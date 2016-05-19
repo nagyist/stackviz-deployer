@@ -1,0 +1,5 @@
+{
+    "deployer": true,
+    "root": "/s",
+    "apiRoot": "/api"
+}
